@@ -1,0 +1,39 @@
+name: Build
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    concurrency: ci-${{ github.ref }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Install dependencies
+        run: |
+          dart pub get
+          dart pub global activate dart_frog_cli
+      - name: Build
+        run: |
+          dart pub global run dart_frog_cli:dart_frog build
+          dart pub get --offline
+          dart compile exe build/bin/server.dart -o dream
+      - name: Commit exe file
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Github Actions Build
+          file_pattern: ./dream
